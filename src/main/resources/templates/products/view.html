@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<!-- 將標題與主要內容傳給 layout/layout.html 裡的 layout 片段 -->
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/layout :: layout(~{::title}, ~{::#main-content})}">
+<head>
+    <title>產品詳情 - [[${product.name}]]</title>
+</head>
+<body>
+
+    <!-- 這個區塊會自動被打包丟進 layout.html 的 <main th:replace="${content}"> 裡面 -->
+    <div id="main-content">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0" th:text="${product.name}">產品名稱</h3>
+            </div>
+            <div class="card-body">
+                <p><strong>ID：</strong> <span th:text="${product.id}">1</span></p>
+                <p><strong>價格：</strong> $<span th:text="${product.price}">0.00</span></p>
+                <p><strong>庫存：</strong> <span th:text="${product.stock}">0</span></p>
+                <p><strong>類別：</strong> <span th:text="${product.category != null ? product.category.name : '未分類'}">類別</span></p>
+                <p><strong>描述：</strong> <span th:text="${product.description}">描述</span></p>
+
+                <div class="mt-3">
+                    <a th:href="@{/products}" class="btn btn-secondary">返回列表</a>
+                    <a th:href="@{/products/{id}/edit(id=${product.id})}" class="btn btn-warning">編輯</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
