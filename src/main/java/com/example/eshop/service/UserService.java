@@ -3,52 +3,58 @@ package com.example.eshop.service;
 import com.example.eshop.entity.User;
 import com.example.eshop.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;  // 之前在 WebConfig 準備好的加密工具，這裡第一次真正用到
+    // 使用 SLF4J 日誌系統，取代 System.out.println
+    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
-    /** 檢查帳號是否已被使用，註冊時用來擋重複 */
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+
     public boolean isUsernameTaken(String username) {
         return userRepository.existsByUsername(username);
     }
 
-    /** 檢查 Email 是否已被註冊過 */
     public boolean isEmailTaken(String email) {
         return userRepository.existsByEmail(email);
     }
 
-    /** 註冊新會員，密碼在存進資料庫前先加密 */
     public User register(User user) {
+        logger.info("新會員註冊: username={}", user.getUsername());  // INFO：正常流程節點
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        return userRepository.save(user);
-        
+        User saved = userRepository.save(user);
+        logger.info("註冊成功: userId={}", saved.getId());
+        return saved;
     }
-        /**
-     * 會員登入驗證
-     * @return 驗證成功回傳 User 物件；帳號不存在、密碼錯誤、帳號被停用都回傳 null
-     */
+
     public User login(String username, String rawPassword) {
         User user = userRepository.findByUsername(username).orElse(null);
 
         if (user == null) {
-        return null;  // 帳號不存在
+            logger.warn("登入失敗，帳號不存在: username={}", username);  // WARN：可預期的異常情況
+            return null;
         }
         if (user.getStatus() == 0) {
-        return null;  // 帳號被停用
+            logger.warn("登入失敗，帳號已被停用: username={}", username);
+            return null;
         }
         if (!passwordEncoder.matches(rawPassword, user.getPassword())) {
-            return null;  // 密碼不對
+            logger.warn("登入失敗，密碼錯誤: username={}", username);
+            return null;
         }
 
-        // 登入成功，更新最後登入時間
-        user.setLastLoginAt(java.time.LocalDateTime.now());
+        user.setLastLoginAt(LocalDateTime.now());
         userRepository.save(user);
+        logger.info("登入成功: username={}", username);
 
         return user;
     }
