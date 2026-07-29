@@ -3,8 +3,11 @@ package com.example.eshop.config;
 import com.example.eshop.entity.Category;
 import com.example.eshop.repository.CategoryRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Bean;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.format.FormatterRegistry;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -12,7 +15,8 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  * Spring MVC 全域設定類別
  *
  * 實作 WebMvcConfigurer 介面，用來客製化 Spring MVC 的預設行為。
- * 這裡只覆寫 addFormatters() 方法，註冊一個自訂的型別轉換器 (Converter)。
+ * 這裡覆寫 addFormatters() 方法，註冊一個自訂的型別轉換器 (Converter)，
+ * 另外也提供一個 PasswordEncoder Bean，供會員模組加密/驗證密碼使用。
  *
  * 使用情境：
  * 前端表單（例如 products/form.html）的下拉選單，選擇分類時，
@@ -55,5 +59,19 @@ public class WebConfig implements WebMvcConfigurer {
                 return categoryRepository.findById(Long.parseLong(id)).orElse(null);
             }
         });
+    }
+
+    /**
+     * 提供全域可用的密碼加密工具
+     *
+     * BCryptPasswordEncoder 是業界標準的單向雜湊加密演算法，
+     * 用於會員註冊時加密密碼、登入時比對密碼是否正確。
+     *
+     * 之後任何 Service 只要用建構子注入 PasswordEncoder，
+     * 就能呼叫 encode() 加密、matches() 驗證。
+     */
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }
