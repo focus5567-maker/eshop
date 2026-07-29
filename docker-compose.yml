@@ -1,0 +1,54 @@
+# ==========================================
+# Docker Compose 設定檔（PostgreSQL 版本）
+# ==========================================
+services:
+  # ==========================================
+  # 服務一：Spring Boot 後端應用容器
+  # ==========================================
+  web-app:
+    image: eclipse-temurin:17-jdk-alpine
+    container_name: eshop-backend
+    ports:
+      - "8888:8888"      # 主機 8888 → 容器 8888
+    volumes:
+      - ./target/eshop-0.0.1-SNAPSHOT.jar:/app/app.jar
+    working_dir: /app
+    command: >
+      java -jar app.jar
+      --spring.profiles.active=prod
+    depends_on:
+      - postgres-db       # 確保 PostgreSQL 先啟動
+    restart: on-failure
+    networks:
+      - app-network
+
+  # ==========================================
+  # 服務二：PostgreSQL 資料庫容器
+  # ==========================================
+  postgres-db:
+    image: postgres:16-alpine
+    container_name: eshop-postgres
+    ports:
+      - "5433:5432"       # 主機用 5433，避免跟你本機原本的 PostgreSQL(5432)衝突
+    environment:
+      POSTGRES_DB: eshop_proddb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: qaz159
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+    networks:
+      - app-network
+
+# ==========================================
+# 資料卷宣告（持久化儲存）
+# ==========================================
+volumes:
+  postgres_data:
+
+# ==========================================
+# 網路宣告（讓容器間通訊）
+# ==========================================
+networks:
+  app-network:
+    driver: bridge

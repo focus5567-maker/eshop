@@ -1,0 +1,79 @@
+# ==========================================
+# 基礎設定（所有環境共用）
+# ==========================================
+server:
+  servlet:
+    context-path: /eshop
+
+spring:
+  application:
+    name: eshop
+  profiles:
+    active: dev   # 預設啟動開發環境，之後要換成正式環境時改成 prod
+
+  # 共用的 Thymeleaf 樣板引擎設定
+  thymeleaf:
+    cache: false
+    encoding: UTF-8
+    mode: HTML
+
+  # 共用的 JPA 基礎屬性與 Hibernate 方言
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          lob:
+            non_contextual_creation: true
+
+---
+# ==========================================
+# 1. 開發環境設定 (Development)
+# ==========================================
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    url: jdbc:postgresql://localhost:5432/eshop_db
+    driver-class-name: org.postgresql.Driver
+    username: postgres
+    password: qaz159
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+server:
+  port: 8080
+
+logging:
+  level:
+    com.example.eshop: DEBUG
+
+---
+# ==========================================
+# 2. 正式部署環境設定 (Production)
+# ==========================================
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    # 這裡先預留給之後 Docker Compose 用的容器名稱（postgres-db），現在還不會用到
+    url: jdbc:postgresql://postgres-db:5432/eshop_proddb
+    driver-class-name: org.postgresql.Driver
+    username: postgres
+    password: qaz159
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+
+server:
+  port: 8888
+
+logging:
+  level:
+    com.example.eshop: INFO
