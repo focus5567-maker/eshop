@@ -12,7 +12,14 @@
             <a class="navbar-brand" th:href="@{/products}">🛒 電商系統</a>
             <div>
                 <a class="btn btn-outline-light btn-sm me-2" th:href="@{/products}">產品管理</a>
-                <a class="btn btn-outline-light btn-sm" th:href="@{/categories}">分類管理</a>
+                <a class="btn btn-outline-light btn-sm me-2" th:href="@{/categories}">分類管理</a>
+
+                <span th:if="${session.username != null}" class="text-white me-2"
+                      th:text="'歡迎, ' + ${session.username}">歡迎</span>
+                <a th:if="${session.username != null}" class="btn btn-outline-light btn-sm" th:href="@{/logout}">登出</a>
+
+                <a th:if="${session.username == null}" class="btn btn-outline-light btn-sm me-2" th:href="@{/login}">登入</a>
+                <a th:if="${session.username == null}" class="btn btn-outline-light btn-sm" th:href="@{/register}">註冊</a>
             </div>
         </div>
     </nav>

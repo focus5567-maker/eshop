@@ -27,5 +27,29 @@ public class UserService {
     public User register(User user) {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         return userRepository.save(user);
+        
+    }
+        /**
+     * 會員登入驗證
+     * @return 驗證成功回傳 User 物件；帳號不存在、密碼錯誤、帳號被停用都回傳 null
+     */
+    public User login(String username, String rawPassword) {
+        User user = userRepository.findByUsername(username).orElse(null);
+
+        if (user == null) {
+        return null;  // 帳號不存在
+        }
+        if (user.getStatus() == 0) {
+        return null;  // 帳號被停用
+        }
+        if (!passwordEncoder.matches(rawPassword, user.getPassword())) {
+            return null;  // 密碼不對
+        }
+
+        // 登入成功，更新最後登入時間
+        user.setLastLoginAt(java.time.LocalDateTime.now());
+        userRepository.save(user);
+
+        return user;
     }
 }
