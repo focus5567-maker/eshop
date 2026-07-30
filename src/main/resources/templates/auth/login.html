@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/layout :: layout(~{::title}, ~{::#main-content})}">
+<head>
+    <title>會員登入</title>
+</head>
+<body>
+    <div id="main-content">
+        <h2>會員登入</h2>
+
+        <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+        <form th:action="@{/login}" method="post">
+            <div class="mb-3">
+                <label for="username" class="form-label">帳號：</label>
+                <input type="text" id="username" name="username" class="form-control" required />
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">密碼：</label>
+                <input type="password" id="password" name="password" class="form-control" required />
+            </div>
+            <button type="submit" class="btn btn-primary">登入</button>
+            <a th:href="@{/register}" class="btn btn-link">還沒有帳號？註冊</a>
+        </form>
+    </div>
+</body>
+</html>

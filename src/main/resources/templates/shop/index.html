@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/layout :: layout(~{::title}, ~{::#main-content})}">
+<head>
+    <title>商品搜尋</title>
+</head>
+<body>
+    <div id="main-content">
+        <h2>商品搜尋</h2>
+
+        <form th:action="@{/shop}" method="get" class="row g-2 mb-4">
+            <div class="col-md-5">
+                <input type="text" name="keyword" th:value="${keyword}"
+                       class="form-control" placeholder="搜尋商品名稱..." />
+            </div>
+            <div class="col-md-4">
+                <select name="categoryId" class="form-select">
+                    <option value="">-- 全部分類 --</option>
+                    <option th:each="c : ${categories}"
+                            th:value="${c.id}"
+                            th:text="${c.name}"
+                            th:selected="${c.id == categoryId}"></option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100">搜尋</button>
+            </div>
+        </form>
+
+        <div class="row">
+            <div class="col-md-4 mb-4" th:each="p : ${results}">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title" th:text="${p.name}"></h5>
+                        <p class="text-muted" th:text="${p.categoryName != null ? p.categoryName : '未分類'}"></p>
+                        <p th:text="${p.description}"></p>
+                        <p><strong th:text="'$' + ${p.price}"></strong></p>
+                        <p class="text-muted">庫存: <span th:text="${p.stock}"></span></p>
+                    </div>
+                </div>
+            </div>
+            <div th:if="${#lists.isEmpty(results)}" class="text-muted">找不到符合條件的商品</div>
+        </div>
+    </div>
+</body>
+</html>

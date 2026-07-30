@@ -4,6 +4,12 @@
 server:
   servlet:
     context-path: /eshop
+    
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true   # 讓 image_url 自動對應到 imageUrl，不用自己一個個手動對應
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl   # 印出實際執行的 SQL，方便你對照
 
 spring:
   application:

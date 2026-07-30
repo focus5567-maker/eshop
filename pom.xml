@@ -31,6 +31,12 @@
 	</properties>
 	<dependencies>
 		<!-- 只用來提供 BCryptPasswordEncoder,不會啟用 Spring Security 的登入攔截機制 -->
+		<!-- MyBatis Spring Boot Starter -->
+		<dependency>
+			<groupId>org.mybatis.spring.boot</groupId>
+			<artifactId>mybatis-spring-boot-starter</artifactId>
+			<version>3.0.4</version>
+		</dependency>
 		<dependency>
     		<groupId>org.springframework.security</groupId>
     		<artifactId>spring-security-crypto</artifactId>
