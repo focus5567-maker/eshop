@@ -23,12 +23,14 @@ public class ShopController {
     @GetMapping("/shop")
     public String shop(@RequestParam(required = false) String keyword,
                         @RequestParam(required = false) Long categoryId,
+                        @RequestParam(required = false) String sort,
                         Model model) {
 
-        model.addAttribute("results", productSearchMapper.search(keyword, categoryId));
+        model.addAttribute("results", productSearchMapper.search(keyword, categoryId, sort));
         model.addAttribute("categories", categoryService.findAll());
         model.addAttribute("keyword", keyword);
         model.addAttribute("categoryId", categoryId);
+        model.addAttribute("sort", sort);
 
         return "shop/index";
     }

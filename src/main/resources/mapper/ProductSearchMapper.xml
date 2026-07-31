@@ -15,7 +15,17 @@
         <if test="categoryId != null">
             AND p.category_id = #{categoryId}
         </if>
-        ORDER BY p.created_at DESC
+        <choose>
+            <when test="sort == 'priceAsc'">
+                ORDER BY p.price ASC
+            </when>
+            <when test="sort == 'priceDesc'">
+                ORDER BY p.price DESC
+            </when>
+            <otherwise>
+                ORDER BY p.created_at DESC
+            </otherwise>
+        </choose>
     </select>
 
 </mapper>

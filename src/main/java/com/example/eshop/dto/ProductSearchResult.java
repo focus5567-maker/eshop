@@ -4,9 +4,9 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
-
+//不放在entity因沒有和資料庫對應的table
 /**
- * 商品搜尋結果的資料載體 (DTO)
+ * 商品搜尋結果的資料載體 (DTO)資料傳輸物件
  *
  * 為什麼不直接用 Product Entity：
  * Product.category 是關聯物件（@ManyToOne），那是 JPA/Hibernate 的機制。

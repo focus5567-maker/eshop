@@ -16,5 +16,7 @@ import java.util.List;
 @Mapper
 public interface ProductSearchMapper {
 
-    List<ProductSearchResult> search(@Param("keyword") String keyword, @Param("categoryId") Long categoryId);
+    List<ProductSearchResult> search(@Param("keyword") String keyword,
+                                      @Param("categoryId") Long categoryId,
+                                      @Param("sort") String sort);
 }

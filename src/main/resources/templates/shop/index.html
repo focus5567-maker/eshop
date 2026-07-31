@@ -9,11 +9,11 @@
         <h2>商品搜尋</h2>
 
         <form th:action="@{/shop}" method="get" class="row g-2 mb-4">
-            <div class="col-md-5">
+            <div class="col-md-4">
                 <input type="text" name="keyword" th:value="${keyword}"
                        class="form-control" placeholder="搜尋商品名稱..." />
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <select name="categoryId" class="form-select">
                     <option value="">-- 全部分類 --</option>
                     <option th:each="c : ${categories}"
@@ -23,6 +23,13 @@
                 </select>
             </div>
             <div class="col-md-3">
+                <select name="sort" class="form-select">
+                    <option value="" th:selected="${sort == null or sort == ''}">最新上架</option>
+                    <option value="priceAsc" th:selected="${sort == 'priceAsc'}">價格由低到高</option>
+                    <option value="priceDesc" th:selected="${sort == 'priceDesc'}">價格由高到低</option>
+                </select>
+            </div>
+            <div class="col-md-2">
                 <button type="submit" class="btn btn-primary w-100">搜尋</button>
             </div>
         </form>
