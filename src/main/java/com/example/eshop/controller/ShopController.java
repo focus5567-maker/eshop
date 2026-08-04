@@ -1,37 +1,17 @@
 package com.example.eshop.controller;
 
-import com.example.eshop.mapper.ProductSearchMapper;
-import com.example.eshop.service.CategoryService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
 /**
- * 消費者前台商品瀏覽/搜尋 Controller
- * 跟 ProductController（後台管理 CRUD）分開，職責不同：
- * 這裡只負責「查詢與顯示」，不提供新增/編輯/刪除。
+ * 消費者前台商品搜尋頁面控制器
+ * 只負責回傳一個「空殼」頁面，實際的搜尋邏輯由 Vue 透過 ProductApiController 非同步取得。
  */
 @Controller
-@RequiredArgsConstructor
 public class ShopController {
 
-    private final ProductSearchMapper productSearchMapper;
-    private final CategoryService categoryService;
-
     @GetMapping("/shop")
-    public String shop(@RequestParam(required = false) String keyword,
-                        @RequestParam(required = false) Long categoryId,
-                        @RequestParam(required = false) String sort,
-                        Model model) {
-
-        model.addAttribute("results", productSearchMapper.search(keyword, categoryId, sort));
-        model.addAttribute("categories", categoryService.findAll());
-        model.addAttribute("keyword", keyword);
-        model.addAttribute("categoryId", categoryId);
-        model.addAttribute("sort", sort);
-
+    public String shop() {
         return "shop/index";
     }
 }
