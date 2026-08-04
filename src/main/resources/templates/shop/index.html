@@ -43,11 +43,48 @@
                         <p th:text="${p.description}"></p>
                         <p><strong th:text="'$' + ${p.price}"></strong></p>
                         <p class="text-muted">庫存: <span th:text="${p.stock}"></span></p>
+                        <button class="btn btn-sm btn-success mt-2" onclick="addToCart(this)"
+                                th:data-product-id="${p.id}">加入購物車</button>
+                        <span class="add-cart-msg text-success ms-2" style="display:none;"></span>
                     </div>
                 </div>
             </div>
             <div th:if="${#lists.isEmpty(results)}" class="text-muted">找不到符合條件的商品</div>
         </div>
+
+        <script>
+        async function addToCart(btn) {
+            const productId = btn.dataset.productId;
+            const msgSpan = btn.nextElementSibling;
+
+            try {
+                const res = await fetch('/eshop/api/cart/items', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ productId: productId, quantity: 1 })
+                });
+
+                if (!res.ok) {
+                    const err = await res.json();
+                    if (res.status === 401) {
+                        alert('請先登入才能加入購物車');
+                        window.location.href = '/eshop/login';
+                    } else {
+                        alert(err.error || '加入購物車失敗');
+                    }
+                    return;
+                }
+
+                msgSpan.textContent = '已加入！';
+                msgSpan.style.display = 'inline';
+                setTimeout(() => { msgSpan.style.display = 'none'; }, 2000);
+            } catch (e) {
+                alert('發生錯誤，請稍後再試');
+            }
+        }
+        </script>
+
     </div>
 </body>
 </html>
