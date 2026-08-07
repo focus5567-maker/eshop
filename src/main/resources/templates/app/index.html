@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/layout :: layout(~{::title}, ~{::#main-content})}">
+<head>
+    <title>電商系統</title>
+</head>
+<body>
+    <div id="main-content">
+        <div id="app"></div>
+        <script type="module" th:src="@{/cart-assets/assets/app.js}"></script>
+    </div>
+</body>
+</html>
