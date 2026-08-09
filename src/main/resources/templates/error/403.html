@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/layout :: layout(~{::title}, ~{::#main-content})}">
+<head>
+    <title>權限不足</title>
+</head>
+<body>
+    <div id="main-content">
+        <div class="text-center py-5">
+            <h2 class="text-danger mb-3">403 - 權限不足</h2>
+            <p class="text-muted mb-4">您的帳號沒有權限存取此頁面，此區域僅限管理員使用。</p>
+            <a th:href="@{/shop}" class="btn btn-primary">回到商品搜尋</a>
+        </div>
+    </div>
+</body>
+</html>

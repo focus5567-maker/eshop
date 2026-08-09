@@ -9,10 +9,10 @@
 <body>
     <nav class="navbar navbar-dark bg-dark mb-4">
         <div class="container">
-            <a class="navbar-brand" th:href="@{/products}">🛒 電商系統</a>
+            <a class="navbar-brand" th:href="@{/shop}">🛒 電商系統</a>
             <div>
-                <a class="btn btn-outline-light btn-sm me-2" th:href="@{/products}">產品管理</a>
-                <a class="btn btn-outline-light btn-sm me-2" th:href="@{/categories}">分類管理</a>
+                <a th:if="${session.role == 'ADMIN'}" class="btn btn-outline-light btn-sm me-2" th:href="@{/products}">產品管理</a>
+                <a th:if="${session.role == 'ADMIN'}" class="btn btn-outline-light btn-sm me-2" th:href="@{/categories}">分類管理</a>
                 <a class="btn btn-outline-light btn-sm me-2" th:href="@{/shop}">商品搜尋</a>
                 <a class="btn btn-outline-light btn-sm me-2" th:href="@{/cart}">購物車</a>
                 <a class="btn btn-outline-light btn-sm me-2" th:href="@{/orders}">我的訂單</a>

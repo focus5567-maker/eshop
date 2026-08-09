@@ -1,6 +1,7 @@
 package com.example.eshop.config;
 
 import com.example.eshop.entity.Category;
+import com.example.eshop.interceptor.AdminRoleInterceptor;
 import com.example.eshop.repository.CategoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -9,6 +10,7 @@ import org.springframework.format.FormatterRegistry;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
@@ -59,6 +61,12 @@ public class WebConfig implements WebMvcConfigurer {
                 return categoryRepository.findById(Long.parseLong(id)).orElse(null);
             }
         });
+    }
+    
+     @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(new AdminRoleInterceptor())
+                .addPathPatterns("/products/**", "/categories/**");
     }
 
     /**
