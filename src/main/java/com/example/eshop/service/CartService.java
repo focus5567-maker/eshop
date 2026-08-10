@@ -43,10 +43,10 @@ public class CartService {
                 });
     }
 
-    /** 查詢購物車內容，轉成顯示用的格式 */
+    /** 查詢購物車內容，轉成顯示用的格式，依 id 排序確保順序穩定 */
     public List<CartItemView> getCartItems(Long userId) {
         Cart cart = getOrCreateCart(userId);
-        return cartItemRepository.findByCartId(cart.getId()).stream()
+        return cartItemRepository.findByCartIdOrderById(cart.getId()).stream()
                 .map(this::toView)
                 .collect(Collectors.toList());
     }

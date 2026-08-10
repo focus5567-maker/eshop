@@ -36,7 +36,7 @@ public class OrderService {
         Cart cart = cartRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalStateException("購物車是空的"));
 
-        List<CartItem> cartItems = cartItemRepository.findByCartId(cart.getId());
+        List<CartItem> cartItems = cartItemRepository.findByCartIdOrderById(cart.getId());
         if (cartItems.isEmpty()) {
             logger.warn("結帳失敗，購物車是空的: userId={}", userId);
             throw new IllegalStateException("購物車是空的");
