@@ -19,7 +19,6 @@ public class OrderApiController {
 
     private final OrderService orderService;
 
-    /** 結帳：把購物車轉成訂單 */
     @PostMapping("/checkout")
     public ResponseEntity<?> checkout(HttpSession session, @RequestBody Map<String, Object> body) {
         Long userId = getUserIdOrNull(session);
@@ -53,7 +52,6 @@ public class OrderApiController {
         }
     }
 
-    /** 查詢自己的訂單清單 */
     @GetMapping
     public ResponseEntity<?> getMyOrders(HttpSession session) {
         Long userId = getUserIdOrNull(session);
@@ -65,7 +63,24 @@ public class OrderApiController {
         return ResponseEntity.ok(orders);
     }
 
-    /** 從 Session 取出使用者 ID，沒有就回傳 null，不丟例外（跟 CartApiController 同樣的寫法） */
+    /** 取消訂單 */
+    @PostMapping("/{id}/cancel")
+    public ResponseEntity<?> cancelOrder(HttpSession session, @PathVariable Long id) {
+        Long userId = getUserIdOrNull(session);
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "尚未登入"));
+        }
+
+        try {
+            OrderView result = orderService.cancelOrder(userId, id);
+            return ResponseEntity.ok(result);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     private Long getUserIdOrNull(HttpSession session) {
         Object userId = session.getAttribute("userId");
         return userId == null ? null : (Long) userId;

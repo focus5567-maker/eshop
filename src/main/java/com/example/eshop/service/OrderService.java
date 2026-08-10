@@ -29,11 +29,6 @@ public class OrderService {
     private final ProductRepository productRepository;
     private final OrderRepository orderRepository;
 
-    /**
-     * 結帳：把購物車內容轉成一張訂單。
-     * 整個方法用 @Transactional 包起來：中途任何一步失敗，前面做的變更全部復原，
-     * 不會出現「扣了庫存但沒建立訂單」這種資料不一致的情況。
-     */
     @Transactional
     public OrderView checkout(Long userId, String recipientName, String recipientPhone,
                                String shippingAddress, Order.PaymentMethod paymentMethod) {
@@ -47,8 +42,6 @@ public class OrderService {
             throw new IllegalStateException("購物車是空的");
         }
 
-        // 選項 A：整單擋下 —— 先檢查「所有」項目的庫存是否足夠，
-        // 只要有一項不夠，整張訂單都不建立，購物車內容維持不變。
         List<String> insufficientItems = cartItems.stream()
                 .filter(item -> item.getQuantity() > item.getProduct().getStock())
                 .map(item -> item.getProduct().getName() + "（庫存剩 " + item.getProduct().getStock() + "）")
@@ -60,7 +53,6 @@ public class OrderService {
             throw new IllegalStateException(message);
         }
 
-        // 所有庫存都足夠，開始建立訂單
         Order order = new Order();
         User userRef = new User();
         userRef.setId(userId);
@@ -81,22 +73,20 @@ public class OrderService {
             orderItem.setOrder(order);
             orderItem.setProduct(product);
             orderItem.setQuantity(cartItem.getQuantity());
-            orderItem.setPrice(product.getPrice());  // 鎖定下單當下的價格
+            orderItem.setPrice(product.getPrice());
             BigDecimal subtotal = product.getPrice().multiply(BigDecimal.valueOf(cartItem.getQuantity()));
             orderItem.setSubtotal(subtotal);
 
             order.getItems().add(orderItem);
             totalAmount = totalAmount.add(subtotal);
 
-            // 扣庫存
             product.setStock(product.getStock() - cartItem.getQuantity());
             productRepository.save(product);
         }
 
         order.setTotalAmount(totalAmount);
-        Order savedOrder = orderRepository.save(order);  // cascade=ALL，items 會一併存檔
+        Order savedOrder = orderRepository.save(order);
 
-        // 清空購物車（訂單建立成功後，購物車項目已經沒有用了）
         cartItemRepository.deleteAll(cartItems);
 
         logger.info("結帳成功: userId={}, orderId={}, 總金額={}", userId, savedOrder.getId(), totalAmount);
@@ -104,14 +94,45 @@ public class OrderService {
         return toView(savedOrder);
     }
 
-    /** 查詢某個會員的訂單清單 */
     public List<OrderView> getOrdersByUser(Long userId) {
         return orderRepository.findByUserIdOrderByOrderDateDesc(userId).stream()
                 .map(this::toView)
                 .collect(Collectors.toList());
     }
 
-    /** Entity → DTO 轉換 */
+    /**
+     * 取消訂單：只有本人的訂單、且狀態為 PENDING 或 PAID 才能取消。
+     * 取消時把當初扣掉的庫存加回去，避免庫存憑空消失。
+     */
+    @Transactional
+    public OrderView cancelOrder(Long userId, Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("查無此訂單"));
+
+        if (!order.getUser().getId().equals(userId)) {
+            logger.warn("取消訂單失敗，非本人訂單: userId={}, orderId={}", userId, orderId);
+            throw new IllegalArgumentException("查無此訂單");
+        }
+
+        if (order.getStatus() != Order.OrderStatus.PENDING && order.getStatus() != Order.OrderStatus.PAID) {
+            logger.warn("取消訂單失敗，狀態不允許取消: orderId={}, status={}", orderId, order.getStatus());
+            throw new IllegalStateException("此訂單目前狀態無法取消");
+        }
+
+        for (OrderItem item : order.getItems()) {
+            Product product = item.getProduct();
+            product.setStock(product.getStock() + item.getQuantity());
+            productRepository.save(product);
+        }
+
+        order.setStatus(Order.OrderStatus.CANCELED);
+        order.setCanceledAt(LocalDateTime.now());
+        Order saved = orderRepository.save(order);
+
+        logger.info("取消訂單成功: userId={}, orderId={}", userId, orderId);
+        return toView(saved);
+    }
+
     private OrderView toView(Order order) {
         OrderView view = new OrderView();
         view.setId(order.getId());
