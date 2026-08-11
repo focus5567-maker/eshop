@@ -13,71 +13,31 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-/**
- * Spring MVC 全域設定類別
- *
- * 實作 WebMvcConfigurer 介面，用來客製化 Spring MVC 的預設行為。
- * 這裡覆寫 addFormatters() 方法，註冊一個自訂的型別轉換器 (Converter)，
- * 另外也提供一個 PasswordEncoder Bean，供會員模組加密/驗證密碼使用。
- *
- * 使用情境：
- * 前端表單（例如 products/form.html）的下拉選單，選擇分類時，
- * 瀏覽器送出的其實只是分類的 ID 字串（例如 "1"），
- * 但 Product Entity 裡的 category 欄位型別是 Category 物件，
- * Spring 預設不知道怎麼把字串轉成物件，所以需要這個 Converter 幫忙轉換。
- */
-@Component // 交給 Spring 容器管理，啟動時會自動被掃描並套用設定
-@RequiredArgsConstructor // Lombok 自動產生建構子，注入 final 欄位 (categoryRepository)
+@Component
+@RequiredArgsConstructor
 public class WebConfig implements WebMvcConfigurer {
 
-    // 注入資料庫存取層，轉換時需要靠它查出實際的 Category 物件
     private final CategoryRepository categoryRepository;
 
-    /**
-     * 註冊自訂的型別轉換器
-     *
-     * @param registry Spring 提供的格式化/轉換器註冊器，
-     *                 呼叫 addConverter() 把自訂邏輯掛進去，
-     *                 之後只要是 String -> Category 的轉換需求，都會套用這段邏輯。
-     */
     @Override
     public void addFormatters(FormatterRegistry registry) {
         registry.addConverter(new Converter<String, Category>() {
-
-            /**
-             * 實際轉換邏輯：
-             * 把表單傳來的分類 ID 字串，轉成對應的 Category 實體。
-             *
-             * @param id 表單送出的分類 ID（字串型態，例如 "1"）
-             * @return 對應的 Category 物件；若 id 為空或查無資料則回傳 null
-             */
             @Override
             public Category convert(String id) {
-                // 防呆：下拉選單選「-- 請選擇分類 --」時，id 會是空字串
                 if (id == null || id.isBlank()) {
                     return null;
                 }
-                // 依 ID 查詢資料庫，找不到就回傳 null（避免拋出例外中斷流程）
                 return categoryRepository.findById(Long.parseLong(id)).orElse(null);
             }
         });
     }
-    
-     @Override
+
+    @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(new AdminRoleInterceptor())
-                .addPathPatterns("/products/**", "/categories/**");
+                .addPathPatterns("/products/**", "/categories/**", "/admin/**");
     }
 
-    /**
-     * 提供全域可用的密碼加密工具
-     *
-     * BCryptPasswordEncoder 是業界標準的單向雜湊加密演算法，
-     * 用於會員註冊時加密密碼、登入時比對密碼是否正確。
-     *
-     * 之後任何 Service 只要用建構子注入 PasswordEncoder，
-     * 就能呼叫 encode() 加密、matches() 驗證。
-     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

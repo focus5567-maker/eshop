@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/layout :: layout(~{::title}, ~{::#main-content})}">
+<head>
+    <title>會員管理</title>
+</head>
+<body>
+    <div id="main-content">
+        <h2>會員管理</h2>
+
+        <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+        <table class="table table-striped table-bordered">
+            <thead class="table-dark">
+                <tr><th>ID</th><th>帳號</th><th>Email</th><th>角色</th><th>狀態</th><th>操作</th></tr>
+            </thead>
+            <tbody>
+                <tr th:each="u : ${users}">
+                    <td th:text="${u.id}"></td>
+                    <td th:text="${u.username}"></td>
+                    <td th:text="${u.email}"></td>
+                    <td>
+                        <span class="badge" th:classappend="${u.role == 'ADMIN'} ? 'bg-danger' : 'bg-secondary'"
+                              th:text="${u.role}"></span>
+                    </td>
+                    <td th:text="${u.status == 1 ? '啟用' : '停用'}"></td>
+                    <td>
+                        <form th:if="${u.id != session.userId}"
+                              th:action="@{/admin/users/{id}/role(id=${u.id})}" method="post" class="d-inline">
+                            <input type="hidden" name="role" th:value="${u.role == 'ADMIN'} ? 'USER' : 'ADMIN'">
+                            <button type="submit" class="btn btn-sm btn-outline-primary"
+                                    th:text="${u.role == 'ADMIN'} ? '降為 USER' : '升為 ADMIN'"></button>
+                        </form>
+                        <span th:if="${u.id == session.userId}" class="text-muted">（自己）</span>
+                    </td>
+                </tr>
+                <tr th:if="${users == null or #lists.isEmpty(users)}">
+                    <td colspan="6" class="text-center text-muted">目前沒有任何會員資料</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

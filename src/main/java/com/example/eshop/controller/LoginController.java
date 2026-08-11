@@ -41,7 +41,7 @@ public class LoginController {
         session.setAttribute("username", user.getUsername());
         session.setAttribute("role", user.getRole());
 
-        return "redirect:/products";
+        return "redirect:/shop";
     }
 
     /** 登出：清空 Session */
