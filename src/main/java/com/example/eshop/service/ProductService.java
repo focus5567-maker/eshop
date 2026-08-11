@@ -1,85 +1,93 @@
 package com.example.eshop.service;
 
 import com.example.eshop.entity.Product;
-import com.example.eshop.service.ProductService; // 註：同 package 內可省略此 import
 import com.example.eshop.repository.ProductRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
-/**
- * 商品模組業務邏輯層 (Business Logic / Service Layer)
- * 負責處理商業邏輯，並作為 Controller 與 Repository (DAO) 之間的溝通橋樑
- */
-@Service // 標示此類別為 Spring 商業邏輯層元件，交由 Spring IoC 容器託管
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.UUID;
+
+@Service
 public class ProductService {
 
-    // 注入 Repository 專門處理資料庫存取
     private final ProductRepository productRepository;
 
-    // ✅ 手動建構子注入（Constructor Injection）
-    // Spring Boot 官方強烈推薦的注入方式，方便做單元測試 (Unit Test) 與保證屬性不可變 (final)
+    // 圖片實際存放的資料夾（專案內的 static/uploads），這個路徑底下的檔案，
+    // 因為在 static 資料夾裡，瀏覽器可以直接透過網址存取
+    private static final String UPLOAD_DIR = "src/main/resources/static/uploads/";
+
     public ProductService(ProductRepository productRepository) {
         this.productRepository = productRepository;
     }
 
-    /**
-     * 1. 分頁取得所有商品
-     * 
-     * @param pageable 分頁與排序條件 (包含當前頁碼、每頁數量、排序欄位)
-     * @return 包含分頁資訊的商品列表
-     */
     public Page<Product> getProducts(Pageable pageable) {
         return productRepository.findAll(pageable);
     }
 
-    /**
-     * 2. 根據 ID 查詢單一商品
-     * 
-     * @param id 商品主鍵 ID
-     * @return 找到了就回傳 Product 實體；若沒找到則拋出 RuntimeException 異常
-     */
     public Product getProductById(Long id) {
-        // findById 回傳 Optional<Product>，搭配 .orElseThrow() 可以很優雅地處理找不到資料的情況
         return productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
     }
 
     /**
-     * 3. 儲存或更新商品
-     * 
-     * @param product 要儲存的商品物件
-     * @return 儲存成功後的 Product 實體（若是新建商品，會包含資料庫自動產生的 id）
+     * 儲存或更新商品，並且處理圖片上傳。
+     * @param product 表單資料組成的商品物件
+     * @param imageFile 使用者選擇的圖片檔案，可能是空的（例如編輯時沒有換圖）
      */
-    public Product saveProduct(Product product) {
-        // save() 會自動判斷：若 product.id 為空則執行 INSERT，若有 id 則執行 UPDATE
+    public Product saveProduct(Product product, MultipartFile imageFile) {
+        // 只有使用者真的選了新檔案，才處理上傳；沒選檔案就跳過，保留原本的 imageUrl
+        if (imageFile != null && !imageFile.isEmpty()) {
+            String imageUrl = storeImage(imageFile);
+            product.setImageUrl(imageUrl);
+        } else if (product.getId() != null) {
+            // 編輯模式且沒有換圖：要保留資料庫裡原本的 imageUrl，
+            // 因為表單傳過來的 product 物件，imageUrl 欄位是空的（表單沒有這個欄位的值）
+            Product existing = productRepository.findById(product.getId()).orElse(null);
+            if (existing != null) {
+                product.setImageUrl(existing.getImageUrl());
+            }
+        }
+
         return productRepository.save(product);
     }
 
-    /**
-     * 4. 根據 ID 刪除商品
-     * 
-     * @param id 要刪除的商品主鍵 ID
-     */
+    /** 把上傳的檔案實際存進硬碟，回傳可以被瀏覽器存取的網址 */
+    private String storeImage(MultipartFile file) {
+        try {
+            Path uploadPath = Paths.get(UPLOAD_DIR);
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+
+            // 用 UUID 當檔名前綴，避免不同商品上傳同名檔案互相覆蓋
+            String originalFilename = file.getOriginalFilename();
+            String newFilename = UUID.randomUUID().toString() + "-" + originalFilename;
+
+            Path targetPath = uploadPath.resolve(newFilename);
+            Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
+
+            // 回傳的網址，對應 static 資料夾的網址規則：/uploads/檔名
+            return "/uploads/" + newFilename;
+        } catch (IOException e) {
+            throw new RuntimeException("圖片上傳失敗", e);
+        }
+    }
+
     public void deleteProduct(Long id) {
         productRepository.deleteById(id);
     }
 
-    /**
-     * 5. 搜尋商品（支援關鍵字與分頁）
-     * 包含防護機制：當關鍵字為空時，自動切換為查詢全部商品
-     * 
-     * @param keyword  使用者輸入的搜尋關鍵字
-     * @param pageable 分頁資訊
-     * @return 分頁後的搜尋結果
-     */
     public Page<Product> searchProducts(String keyword, Pageable pageable) {
-        // 防護邏輯：若關鍵字為 null、空字串或全為空白字元，直接回傳所有商品列表
         if (keyword == null || keyword.trim().isEmpty()) {
             return productRepository.findAll(pageable);
         }
-        
-        // 呼叫 Repository 衍生查詢：忽略大小寫 + 模糊搜尋 + 去除關鍵字前後空格
         return productRepository.findByNameContainingIgnoreCase(keyword.trim(), pageable);
     }
 }

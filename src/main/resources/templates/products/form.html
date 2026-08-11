@@ -7,11 +7,15 @@
 <body>
     <div id="main-content">
         <h2>新增產品</h2>
-        <form th:action="@{/products}" th:object="${product}" method="post">
+        <form th:action="@{/products}" th:object="${product}" method="post" enctype="multipart/form-data">
             <input type="hidden" th:field="*{id}" />
             <div class="mb-3">
                 <label for="name" class="form-label">產品名稱：</label>
                 <input type="text" id="name" th:field="*{name}" class="form-control" required />
+            </div>
+            <div class="mb-3">
+                <label for="description" class="form-label">產品描述：</label>
+                <textarea id="description" th:field="*{description}" class="form-control" rows="3"></textarea>
             </div>
             <div class="mb-3">
                 <label for="price" class="form-label">價格：</label>
@@ -27,6 +31,15 @@
                     <option value="">-- 請選擇分類 --</option>
                     <option th:each="c : ${categories}" th:value="${c.id}" th:text="${c.name}"></option>
                 </select>
+            </div>
+            <div class="mb-3">
+                <label for="imageFile" class="form-label">商品圖片：</label>
+                <input type="file" id="imageFile" name="imageFile" class="form-control" accept="image/*" />
+                <div th:if="${product.imageUrl != null}" class="mt-2">
+                    <p class="text-muted mb-1">目前圖片：</p>
+                    <img th:src="@{${product.imageUrl}}" alt="目前商品圖片" style="max-width: 200px; max-height: 200px;" class="border rounded" />
+                    <p class="text-muted small">不選擇新檔案，將維持使用這張圖片</p>
+                </div>
             </div>
             <button type="submit" class="btn btn-success">儲存產品</button>
             <a th:href="@{/products}" class="btn btn-secondary">返回列表</a>
