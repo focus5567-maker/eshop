@@ -1,37 +1,84 @@
 <!DOCTYPE html>
+<!-- xmlns:th 這個宣告，是讓瀏覽器/編輯器知道這份 HTML 裡有 Thymeleaf 專屬的語法（th: 開頭的屬性） -->
 <html xmlns:th="http://www.thymeleaf.org"
       th:fragment="layout(title, content)">
+<!--
+     th:fragment="layout(title, content)"：
+     把這整份 HTML 定義成一個「可以被其他頁面引用的片段」，名字叫 layout，
+     接收兩個參數：title（標題內容）、content（要塞進中間主要區域的內容）。
+
+     誰會用到這個檔案：
+     → 幾乎所有 Thymeleaf 頁面都靠這行語法套用這份共用版型：
+       th:replace="~{layout/layout :: layout(~{::title}, ~{::#main-content})}"
+       （例如 products/list.html、categories/form.html、auth/login.html、
+       admin/users.html、error/403.html、app/index.html）
+     → 只要套用了這份版型，這裡的導覽列、頁尾就會自動出現在該頁面上，
+       不用每個頁面各自重複寫一次
+-->
 <head>
     <meta charset="UTF-8">
+    <!-- th:replace="${title}"：把套用這份版型的頁面，自己定義的 <title> 內容替換進來，
+         每個頁面的分頁標題可以不一樣（例如「商品搜尋」「我的訂單」），不會全部都叫「電商系統」 -->
     <title th:replace="${title}">電商系統</title>
+
+    <!-- Bootstrap CSS，整個網站唯一一次引入的地方。
+         誰會用到：所有套用這份版型的頁面（包括被 Vue 接管畫面的 app/index.html），
+         都是「借用」這裡載入的樣式，不用各自重複引入 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
+    <!-- 共用導覽列，出現在網站每一個頁面的最上方 -->
     <nav class="navbar navbar-dark bg-dark mb-4">
         <div class="container">
             <a class="navbar-brand" th:href="@{/shop}">🛒 電商系統</a>
             <div>
+                <!--
+                    th:if="${session.role == 'ADMIN'}"：
+                    只有 Session 裡 role 是 ADMIN 的使用者才看得到這三個連結。
+                    這只是「畫面上藏起來」，真正的權限防護是後端的 AdminRoleInterceptor，
+                    就算有人把連結藏起來這件事繞過（例如直接打網址），
+                    後端攔截器一樣會擋下非 ADMIN 的請求，導向 /403
+                -->
                 <a th:if="${session.role == 'ADMIN'}" class="btn btn-outline-light btn-sm me-2" th:href="@{/products}">產品管理</a>
                 <a th:if="${session.role == 'ADMIN'}" class="btn btn-outline-light btn-sm me-2" th:href="@{/categories}">分類管理</a>
                 <a th:if="${session.role == 'ADMIN'}" class="btn btn-outline-light btn-sm me-2" th:href="@{/admin/users}">會員管理</a>
+
+                <!-- 這三個連結，不管登入與否、任何角色都看得到，是消費者前台的入口。
+                     點下去是整頁連結（不是 Vue Router 的內部切換），
+                     因為這裡是 Thymeleaf 渲染的區域，不在 Vue App 的管轄範圍內，
+                     點擊後瀏覽器會整頁跳轉到 Vue App 那邊接手畫面 -->
                 <a class="btn btn-outline-light btn-sm me-2" th:href="@{/shop}">商品搜尋</a>
                 <a class="btn btn-outline-light btn-sm me-2" th:href="@{/cart}">購物車</a>
                 <a class="btn btn-outline-light btn-sm me-2" th:href="@{/orders}">我的訂單</a>
 
+                <!-- session.username 有值代表已登入，顯示歡迎訊息+登出按鈕 -->
                 <span th:if="${session.username != null}" class="text-white me-2"
                       th:text="'歡迎, ' + ${session.username}">歡迎</span>
                 <a th:if="${session.username != null}" class="btn btn-outline-light btn-sm" th:href="@{/logout}">登出</a>
 
+                <!-- session.username 是空的代表未登入，顯示登入/註冊按鈕，
+                     跟上面那組是互斥的（th:if 反過來判斷 == null），同一時間只會顯示其中一組 -->
                 <a th:if="${session.username == null}" class="btn btn-outline-light btn-sm me-2" th:href="@{/login}">登入</a>
                 <a th:if="${session.username == null}" class="btn btn-outline-light btn-sm" th:href="@{/register}">註冊</a>
             </div>
         </div>
     </nav>
 
+    <!--
+        th:replace="${content}"：這裡是整份版型最核心的「插槽」，
+        每個套用這份版型的頁面，把自己真正想顯示的內容（#main-content 那個區塊），
+        替換進這裡顯示。
+
+        踩過的坑（自己的筆記提醒）：
+        只有明確帶進去的 title 跟 #main-content 內容才會出現在畫面上，
+        放在 #main-content 這個 <div> 外面的東西（例如某個頁面不小心寫在外層的 <script>）
+        會被完全忽略、安靜地消失，不會報錯，也不容易發現
+    -->
     <main class="container mb-5" th:replace="${content}">
         <p>預設內容（會被子頁面覆蓋）</p>
     </main>
 
+    <!-- 共用頁尾，每個頁面都會出現在最下方 -->
     <footer class="text-center text-muted py-3 border-top mt-auto">
         &copy; 2026 電商系統 All Rights Reserved.
     </footer>

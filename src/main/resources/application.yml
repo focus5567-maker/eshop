@@ -1,67 +1,89 @@
 # ==========================================
 # 基礎設定（所有環境共用）
 # ==========================================
+# 這一段沒有用 --- 分隔，代表是「所有 profile 都會套用」的共用設定，
+# 不管啟動時是 dev 還是 prod，這幾行都會生效。
+
 server:
   servlet:
+    # 整個網站的網址前綴，例如 /products 實際網址會變成 /eshop/products。
+    # Vue Router 那邊的 createWebHistory('/eshop/') 也要對齊這個設定，不然路由會對不上。
     context-path: /eshop
-    
+
 mybatis:
+  # 特意留下要看的 !! 這整個 mybatis 區塊，目前完全沒有生效，是「死設定」。
+  # 原因：MyBatisConfig.java 手動宣告了 SqlSessionFactory，
+  # Spring Boot 判斷「已經有人自己提供了這個 Bean」，
+  # 就不會執行 MyBatis 的自動配置類別（原本負責讀取這裡的設定值），
+  # 所以底下這幾行寫了也不會被讀取，真正生效的設定，全部改在 MyBatisConfig.java 用 Java 程式碼重寫一次。
   mapper-locations: classpath:mapper/*.xml
   configuration:
-    map-underscore-to-camel-case: true   # 讓 image_url 自動對應到 imageUrl，不用自己一個個手動對應
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl   # 印出實際執行的 SQL，方便你對照
+    map-underscore-to-camel-case: true   # 讓 image_url 自動對應到 imageUrl，不用自己一個個手動對應（實際生效的是 MyBatisConfig.java 那份）
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl   # 印出實際執行的 SQL（沒生效；log 裡看到的 SQL 是靠下面 logging.level 設定印出來的）
 
 spring:
   application:
+    # 應用程式名稱，主要用在 log 裡標示（你啟動 log 開頭那行 [eshop] 就是這裡設定的）
     name: eshop
+
   profiles:
+    # 決定要套用下面哪一段（dev 或 prod），改這裡就能整套切換開發/正式環境
     active: dev   # 預設啟動開發環境，之後要換成正式環境時改成 prod
 
   # 共用的 Thymeleaf 樣板引擎設定
   thymeleaf:
-    cache: false
-    encoding: UTF-8
+    cache: false        # 關閉樣板快取，開發時改完 .html 存檔立刻生效，不用重啟才看得到改動
+    encoding: UTF-8      # 避免中文顯示亂碼
     mode: HTML
 
   # 共用的 JPA 基礎屬性與 Hibernate 方言
   jpa:
-    show-sql: true
+    show-sql: true       # 印出 JPA 實際執行的 SQL，方便對照除錯（這個真的有生效，跟 MyBatis 的死設定不同）
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect   # 告訴 Hibernate 這是 PostgreSQL 資料庫，SQL 語法要照 PostgreSQL 的規則產生
+        format_sql: true    # 印出的 SQL 排版整齊、有換行縮排，比較好讀
         jdbc:
           lob:
-            non_contextual_creation: true
+            non_contextual_creation: true   # 處理大型物件欄位（例如長文字/二進位資料）的相容性設定，避免某些情況下報錯
 
 ---
 # ==========================================
 # 1. 開發環境設定 (Development)
 # ==========================================
+# --- 這條分隔線之後，是「只有 dev profile 啟動時才會套用」的設定
+
 spring:
   config:
     activate:
-      on-profile: dev
+      on-profile: dev   # 標記這一整段屬於 dev 這個 profile
   datasource:
+    # 連本機的 PostgreSQL，這是 JPA 跟 MyBatis 共用的同一個 DataSource 來源
     url: jdbc:postgresql://localhost:5432/eshop_db
     driver-class-name: org.postgresql.Driver
     username: postgres
-    password: qaz159
+    password: qaz159   # !! 已知風險：密碼明文寫在這裡，規格書上本專案進度先暫不處理
   jpa:
     hibernate:
+      # Hibernate 自動比對 Entity 跟資料庫結構，缺什麼欄位/表就自動幫你建/改，
+      # 不用手寫 CREATE TABLE，這是為什麼你從沒手寫過建表 SQL 的原因
       ddl-auto: update
 
 server:
-  port: 8080
+  port: 8080   # 本機開發用的 port
 
 logging:
   level:
-    com.example.eshop: DEBUG
+    com.example.eshop: DEBUG   # 這個套件底下的 log，DEBUG 等級以上都印出來，
+                                 # 這也是為什麼你能在啟動 log 裡看到 MyBatis 實際執行的 SQL 語句
 
 ---
 # ==========================================
 # 2. 正式部署環境設定 (Production)
 # ==========================================
+# --- 這條分隔線之後，是「只有 prod profile 啟動時才會套用」的設定，
+# 對應到 Docker Compose 部署的情境
+
 spring:
   config:
     activate:
@@ -75,11 +97,11 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: false
+    show-sql: false   # 正式環境不印 SQL，避免 log 太多雜訊、也避免洩漏查詢細節
 
 server:
-  port: 8888
+  port: 8888   # 對應 docker-compose.yml 裡 web-app 服務的對外 port
 
 logging:
   level:
-    com.example.eshop: INFO
+    com.example.eshop: INFO   # 正式環境只印重要訊息（INFO 以上），不像 dev 印那麼細（DEBUG）
