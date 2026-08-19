@@ -45,6 +45,20 @@
                 </tr>
             </tbody>
         </table>
+
+        <!-- 分頁按鈕，只有超過一頁時才顯示 -->
+        <nav th:if="${totalPages > 1}" aria-label="分頁">
+            <ul class="pagination justify-content-center">
+                <li class="page-item" th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+                    th:classappend="${i == currentPage} ? 'active'">
+                    <a class="page-link" th:href="@{/products(page=${i}, keyword=${keyword})}" th:text="${i + 1}"></a>
+                </li>
+            </ul>
+        </nav>
+
+        <p class="text-center text-muted" th:if="${totalItems > 0}">
+            共 <span th:text="${totalItems}"></span> 筆資料
+        </p>
     </div>
 </body>
 </html>

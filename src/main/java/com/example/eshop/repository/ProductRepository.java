@@ -30,6 +30,8 @@ import org.springframework.stereotype.Repository;
 // findAll()、save()、deleteById() 這些方法完全不用自己寫，
 // Spring 在應用程式啟動時，會在背後動態產生一個「隱形的實作類別」，
 // 你完全看不到這個實作的原始碼，但它確實存在、確實能被呼叫、確實會執行對應的 SQL。
+
+//<Entity名稱, 主鍵型態>
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
@@ -47,7 +49,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     //   其餘的商品 CRUD（新增、單筆查詢、刪除），都是靠 JpaRepository 內建的方法完成，
     //   不需要在這裡另外宣告。
 
-    
+
     // 依 id 排序，確保順序穩定不會因為編輯商品而跳動
     Page<Product> findByNameContainingIgnoreCaseOrderById(String name, Pageable pageable);
 

@@ -41,6 +41,7 @@ public class AdminUserController {
             return "admin/users";
         }
 
+        //redirect重新導向
         return "redirect:/admin/users";
     }
 }

@@ -2,19 +2,69 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+    namespace 這一行是關鍵——MyBatis 靠這個路徑，
+    去比對 ProductSearchMapper.java 這個介面（完整路徑要一字不差對上），
+    確定「這份 XML 是給哪個介面用的」。
+-->
 <mapper namespace="com.example.eshop.mapper.ProductSearchMapper">
 
+    <!--
+        id="search" 對應 ProductSearchMapper.java 介面裡的 search() 方法，
+        MyBatis 靠「namespace + id」這組合，找到呼叫這個方法時該執行哪段 SQL。
+
+        resultType 指定查詢結果要塞進哪個類別——
+        這裡不是塞進 Product（Entity），是塞進 ProductSearchResult（DTO），
+        因為這次查詢橫跨 products、categories 兩張表，
+        Product 本身沒有 categoryName 這種扁平欄位，需要專門的 DTO 來裝。
+
+        誰會呼叫這裡：
+        → ProductApiController.search()：Vue 前台商品搜尋頁（ShopView.vue）呼叫的 API，
+          最終查詢結果會被包成 JSON 回傳給 Vue 顯示商品卡片
+    -->
     <select id="search" resultType="com.example.eshop.dto.ProductSearchResult">
+
+        <!--
+            SELECT 的欄位裡，p.image_url 會靠 MyBatisConfig.java 設定的
+            setMapUnderscoreToCamelCase(true)，自動對應到 ProductSearchResult.imageUrl；
+            c.name AS category_name 用別名，讓分類表的 name 欄位
+            也能自動對應到 ProductSearchResult.categoryName
+        -->
         SELECT p.id, p.name, p.price, p.stock, p.description, p.image_url, c.name AS category_name
         FROM products p
+        <!-- LEFT JOIN：就算某個商品沒有設定分類（category_id 是空的），
+             這筆商品還是會被查出來，只是 category_name 會是 null，不會整筆消失 -->
         LEFT JOIN categories c ON p.category_id = c.id
+        <!-- 只查「上架中」的商品，下架商品不會出現在前台搜尋結果 -->
         WHERE p.status = 1
+
+        <!--
+            以下三段都是「動態 SQL」，MyBatis 特有的能力——
+            根據呼叫時傳進來的參數（keyword、categoryId、sort）有沒有值，
+            決定要不要把這段 SQL 條件加進最終組出來的查詢語句，
+            這正是為什麼商品搜尋要用 MyBatis 而不是 JPA 的核心原因：
+            JPA 的衍生查詢沒辦法這樣彈性地「依條件動態組合」
+        -->
+
+        <!-- 只有使用者真的輸入了關鍵字，才加上這段模糊搜尋條件 -->
         <if test="keyword != null and keyword != ''">
             AND p.name ILIKE CONCAT('%', #{keyword}, '%')
         </if>
+        <!-- ILIKE 是 PostgreSQL 特有的語法，效果等同 LIKE 但不分大小寫，
+             跟 JPA 那邊 findByNameContainingIgnoreCase 做的事情是一樣的，
+             只是這裡要自己手寫，JPA 那邊是自動產生 -->
+
+        <!-- 只有使用者真的選了分類，才加上這段條件；沒選就查全部分類 -->
         <if test="categoryId != null">
             AND p.category_id = #{categoryId}
         </if>
+
+        <!--
+            choose/when/otherwise：MyBatis 的動態 SQL 語法，
+            效果類似 Java 的 switch-case，依照 sort 參數的值，
+            決定最終要用哪一種排序方式，一定會命中其中一個分支
+        -->
         <choose>
             <when test="sort == 'priceAsc'">
                 ORDER BY p.price ASC
@@ -22,6 +72,8 @@
             <when test="sort == 'priceDesc'">
                 ORDER BY p.price DESC
             </when>
+            <!-- 使用者沒有選排序方式時的預設值：依建立時間新到舊排序，
+                 這代表商品搜尋從一開始就有固定排序，不會有排序不穩定的問題 -->
             <otherwise>
                 ORDER BY p.created_at DESC
             </otherwise>

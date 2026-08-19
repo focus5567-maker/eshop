@@ -11,7 +11,7 @@ server:
     context-path: /eshop
 
 mybatis:
-  # 特意留下要看的 !! 這整個 mybatis 區塊，目前完全沒有生效，是「死設定」。
+  # 特意留下要看的死code可刪除 !! 這整個 mybatis 區塊，目前完全沒有生效，是「死設定」。
   # 原因：MyBatisConfig.java 手動宣告了 SqlSessionFactory，
   # Spring Boot 判斷「已經有人自己提供了這個 Bean」，
   # 就不會執行 MyBatis 的自動配置類別（原本負責讀取這裡的設定值），

@@ -1,12 +1,55 @@
 <!DOCTYPE html>
+<!--
+    這份檔案是「消費者前台 Vue App 的唯一空殼樣板」，
+    /shop、/cart、/checkout、/orders 這四個網址，
+    全部由 ConsumerAppController 回傳同一份這個樣板，
+    真正要顯示哪個畫面，交給 Vue Router 依照網址自己判斷。
+
+    這份檔案「有」套用共用版型 layout.html，
+    所以打開這四個網址,一樣會看到跟後台管理頁面一致的導覽列跟頁尾，
+    只是中間的內容（#main-content 這一塊）換成了空殼，交給 Vue 接管。
+-->
 <html xmlns:th="http://www.thymeleaf.org"
       th:replace="~{layout/layout :: layout(~{::title}, ~{::#main-content})}">
 <head>
+    <!--
+        這裡的 <title> 是通用預設值,不會依照 /shop、/cart 各自顯示不同標題，
+        因為現在四個頁面共用同一份樣板,由 Vue Router 內部
+        （router.js 的 beforeEach）動態改 document.title 來決定實際顯示的標題，
+        這裡的文字只是「還沒被 Vue 接管前」短暫顯示的預設標題
+    -->
     <title>電商系統</title>
 </head>
 <body>
+    <!--
+        #main-content：layout.html 抓取這個 id 的內容，套進共用版型的中間插槽，
+        這件事我們之前確認過的坑要記得——
+        任何東西放在這個 div 外面,都會被 layout.html 忽略、不會出現在畫面上
+    -->
     <div id="main-content">
+
+        <!--
+            這就是「空殼」的核心——一個完全沒有內容的 div，
+            誰會用到它：
+            → app.js 執行時，會呼叫 createApp(App).mount('#app')，
+              Vue 靠這行程式碼，找到這個 id="app" 的 div，
+              把整個 Vue App（含 Router 判斷出來的對應頁面）畫進這裡面
+        -->
         <div id="app"></div>
+
+        <!--
+            載入編譯後的 Vue 程式碼（app.js），這是瀏覽器真正會執行的檔案。
+
+            th:src="@{/cart-assets/assets/app.js}"：
+            用 th:src 而不是直接寫死 src="/cart-assets/..."，
+            是因為 Spring Boot 有 context-path: /eshop，
+            th:src 會自動幫你補上這個前綴，變成正確的完整路徑
+            /eshop/cart-assets/assets/app.js，
+            如果寫死不加 th:，會少了 /eshop 這段，載入時會 404。
+
+            type="module"：告訴瀏覽器這是現代 JavaScript 模組寫法
+            （Vite 打包出來的檔案需要這個屬性才能正確載入 import/export 語法）
+        -->
         <script type="module" th:src="@{/cart-assets/assets/app.js}"></script>
     </div>
 </body>
